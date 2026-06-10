@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notion Minimalist Clock Widget</title>
+    <title>Notion Cherry Blossom Clock Widget</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts for sophisticated Korean typography -->
+    <!-- Google Fonts for sophisticated Korean typography & romantic spring fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&family=East+Sea+Dokdo&display=swap" rel="stylesheet">
     
     <style>
-        /* Smooth transition for theme switching and interactive elements */
         * {
-            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+            transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, transform 0.2s ease;
         }
         
         /* Font classes */
         .font-sans-kr { font-family: 'Noto Sans KR', sans-serif; }
         .font-serif-kr { font-family: 'Gowun Batang', serif; }
         .font-mono-kr { font-family: 'JetBrains Mono', monospace; }
+        .font-spring { font-family: 'Gowun Batang', serif; font-weight: 700; }
 
         /* Hide scrollbars completely for embed friendliness */
         body {
@@ -33,21 +33,58 @@
 
         /* Subtle pulse animation for the hyphen separator */
         @keyframes pulse-slow {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.4; }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(0.95); }
         }
         .pulse-separator {
-            animation: pulse-slow 2s infinite;
+            animation: pulse-slow 2s infinite ease-in-out;
+        }
+
+        /* Ambient glowing effect for dark mode (night cherry blossom) */
+        .cherry-glow {
+            text-shadow: 0 0 10px rgba(255, 182, 193, 0.4);
+        }
+        .dark .cherry-glow {
+            text-shadow: 0 0 15px rgba(255, 105, 180, 0.8);
+        }
+
+        /* Falling Cherry Blossom Canvas styling */
+        #blossom-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
         }
     </style>
 </head>
-<body class="bg-white text-black h-screen w-screen flex items-center justify-center p-4 overflow-hidden select-none font-sans-kr" id="body-container">
+<body class="bg-[#FFF0F5] text-[#5C3D46] h-screen w-screen flex items-center justify-center p-4 overflow-hidden select-none font-serif-kr relative" id="body-container">
+
+    <!-- Background Canvas for Cherry Blossoms -->
+    <canvas id="blossom-canvas"></canvas>
 
     <!-- Main Widget Container -->
-    <div class="relative w-full max-w-lg mx-auto flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-transparent transition-all duration-300" id="widget-card">
+    <div class="relative w-full max-w-lg mx-auto flex flex-col items-center justify-center text-center p-8 rounded-3xl border border-pink-100/50 bg-white/40 backdrop-blur-md transition-all duration-500 z-10 shadow-lg shadow-pink-200/20" id="widget-card">
         
-        <!-- Settings Toggle Button (Visible on Hover in desktop, always small and unobtrusive) -->
-        <button id="settings-btn" class="absolute top-2 right-2 p-2 rounded-full opacity-0 hover:opacity-100 focus:opacity-100 md:group-hover:opacity-100 text-gray-400 hover:text-black dark:hover:text-white transition-opacity duration-200 z-20" title="위젯 설정">
+        <!-- Elegant Cherry Blossom Branch Graphic (SVG) -->
+        <div class="absolute -top-4 -left-2 w-24 h-24 opacity-80 pointer-events-none select-none transition-opacity duration-300" id="blossom-svg">
+            <svg viewBox="0 0 100 100" class="w-full h-full fill-none stroke-current text-pink-300 dark:text-pink-400">
+                <!-- Branch -->
+                <path d="M 0 10 C 20 12, 40 25, 60 20 C 70 17, 80 10, 85 5" stroke="#8B5A65" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M 30 18 C 35 25, 45 30, 48 40" stroke="#8B5A65" stroke-width="1.5" stroke-linecap="round"/>
+                <!-- Cherry blossoms -->
+                <circle cx="45" cy="21" r="4" fill="#FFB7C5" stroke="#FFE4E1" stroke-width="0.5" />
+                <circle cx="58" cy="20" r="5" fill="#FFA1B4" stroke="#FFE4E1" stroke-width="0.5" />
+                <circle cx="28" cy="15" r="3" fill="#FFC0CB" stroke="#FFE4E1" stroke-width="0.5" />
+                <circle cx="48" cy="38" r="4" fill="#FFA1B4" stroke="#FFE4E1" stroke-width="0.5" />
+                <circle cx="72" cy="16" r="3" fill="#FFB7C5" stroke="#FFE4E1" stroke-width="0.5" />
+            </svg>
+        </div>
+
+        <!-- Settings Toggle Button (Reveals on Hover) -->
+        <button id="settings-btn" class="absolute top-3 right-3 p-2 rounded-full opacity-0 hover:opacity-100 focus:opacity-100 text-pink-400 hover:text-pink-600 dark:hover:text-pink-300 transition-opacity duration-200 z-20" title="위젯 설정">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -55,94 +92,94 @@
         </button>
 
         <!-- Clock Display Elements -->
-        <div class="space-y-3 md:space-y-4 cursor-pointer" id="clock-display" onclick="toggleFullScreenHint()">
+        <div class="space-y-4 cursor-pointer" id="clock-display">
             <!-- Date Line: XXXX년 XX월 XX일 X요일 -->
-            <div id="date-part" class="text-xl md:text-2xl lg:text-3xl font-light tracking-wide opacity-90">
+            <div id="date-part" class="text-xl md:text-2xl lg:text-3xl font-light tracking-wide opacity-90 cherry-glow">
                 0000년 00월 00일 일요일
             </div>
             
             <!-- Time Line: - XX시 XX분 오전/오후 -->
-            <div id="time-part" class="text-2xl md:text-3xl lg:text-4xl font-medium tracking-normal flex items-center justify-center gap-1">
+            <div id="time-part" class="text-2xl md:text-3xl lg:text-4xl font-semibold tracking-normal flex items-center justify-center gap-1 cherry-glow">
                 <span class="pulse-separator opacity-60 mr-1">-</span>
                 <span id="time-hours">00</span>시 
                 <span id="time-minutes" class="ml-1">00</span>분 
-                <span id="time-ampm" class="ml-2 text-lg md:text-xl lg:text-2xl opacity-75 font-normal">오전</span>
-                <span id="time-seconds" class="text-xs opacity-40 self-end mb-1 ml-1 hidden">00</span>
+                <span id="time-ampm" class="ml-2 text-lg md:text-xl lg:text-2xl opacity-80 font-normal">오전</span>
+                <span id="time-seconds" class="text-xs opacity-50 self-end mb-1 ml-1 hidden">00</span>
             </div>
         </div>
     </div>
 
-    <!-- Settings Panel (Hidden overlay) -->
-    <div id="settings-panel" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
-        <div class="bg-white dark:bg-neutral-900 text-black dark:text-white p-6 rounded-2xl max-w-xs w-full shadow-2xl border border-gray-200 dark:border-neutral-800 m-4">
-            <div class="flex justify-between items-center mb-5 pb-2 border-b border-gray-100 dark:border-neutral-800">
-                <h3 class="font-bold text-lg flex items-center gap-2">
+    <!-- Settings Panel Overlay -->
+    <div id="settings-panel" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white/95 dark:bg-neutral-900/95 text-neutral-800 dark:text-neutral-100 p-6 rounded-3xl max-w-xs w-full shadow-2xl border border-pink-100 dark:border-neutral-800 m-4">
+            <div class="flex justify-between items-center mb-5 pb-2 border-b border-pink-100 dark:border-neutral-800">
+                <h3 class="font-bold text-lg flex items-center gap-2 text-pink-500">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
-                    위젯 맞춤 설정
+                    봄날의 시계 설정
                 </h3>
-                <button id="close-settings" class="text-gray-400 hover:text-black dark:hover:text-white p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800">
+                <button id="close-settings" class="text-gray-400 hover:text-pink-500 p-1 rounded-lg hover:bg-pink-50 dark:hover:bg-neutral-800">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                     </svg>
                 </button>
             </div>
 
-            <div class="space-y-5 text-sm">
+            <div class="space-y-4 text-sm">
                 <!-- Color Theme Options -->
                 <div>
-                    <span class="block font-medium mb-2 text-gray-500 dark:text-gray-400">색상 테마</span>
+                    <span class="block font-medium mb-2 text-pink-600/80 dark:text-pink-400">벚꽃 테마</span>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setTheme('light')" class="theme-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-center font-medium text-xs">라이트</button>
-                        <button onclick="setTheme('dark')" class="theme-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-center font-medium text-xs">다크</button>
-                        <button onclick="setTheme('system')" class="theme-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-center font-medium text-xs">시스템</button>
+                        <button onclick="setTheme('light')" class="theme-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-center font-medium text-xs">낮 벚꽃</button>
+                        <button onclick="setTheme('dark')" class="theme-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-center font-medium text-xs">밤 벚꽃</button>
+                        <button onclick="setTheme('system')" class="theme-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-center font-medium text-xs">시스템</button>
                     </div>
                 </div>
 
                 <!-- Font Selection -->
                 <div>
-                    <span class="block font-medium mb-2 text-gray-500 dark:text-gray-400">서체 스타일</span>
+                    <span class="block font-medium mb-2 text-pink-600/80 dark:text-pink-400">글씨체</span>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setFont('sans')" class="font-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs font-sans-kr">고딕</button>
-                        <button onclick="setFont('serif')" class="font-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs font-serif-kr">명조</button>
-                        <button onclick="setFont('mono')" class="font-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs font-mono-kr">코딩</button>
+                        <button onclick="setFont('sans')" class="font-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-xs font-sans-kr">고딕</button>
+                        <button onclick="setFont('serif')" class="font-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-xs font-serif-kr">명조</button>
+                        <button onclick="setFont('mono')" class="font-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-xs font-mono-kr">코딩</button>
                     </div>
                 </div>
 
                 <!-- Font Size Options -->
                 <div>
-                    <span class="block font-medium mb-2 text-gray-500 dark:text-gray-400">글자 크기</span>
+                    <span class="block font-medium mb-2 text-pink-600/80 dark:text-pink-400">크기 조정</span>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setSize('sm')" class="size-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">작게</button>
-                        <button onclick="setSize('md')" class="size-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">보통</button>
-                        <button onclick="setSize('lg')" class="size-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">크게</button>
+                        <button onclick="setSize('sm')" class="size-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-xs">작게</button>
+                        <button onclick="setSize('md')" class="size-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-xs">보통</button>
+                        <button onclick="setSize('lg')" class="size-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-xs">크게</button>
                     </div>
                 </div>
 
-                <!-- Border Style Options -->
+                <!-- Border/Shadow Options -->
                 <div>
-                    <span class="block font-medium mb-2 text-gray-500 dark:text-gray-400">테두리 및 그림자</span>
+                    <span class="block font-medium mb-2 text-pink-600/80 dark:text-pink-400">테두리 스타일</span>
                     <div class="grid grid-cols-3 gap-2">
-                        <button onclick="setBorder('none')" class="border-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">없음</button>
-                        <button onclick="setBorder('thin')" class="border-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">실선</button>
-                        <button onclick="setBorder('shadow')" class="border-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">그림자</button>
+                        <button onclick="setBorder('none')" class="border-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-xs">기본</button>
+                        <button onclick="setBorder('thin')" class="border-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-xs">윤곽선</button>
+                        <button onclick="setBorder('shadow')" class="border-opt-btn p-2 rounded-xl border border-pink-200/60 dark:border-neutral-700 hover:bg-pink-50 dark:hover:bg-neutral-800 text-xs">그림자</button>
                     </div>
                 </div>
 
                 <!-- Optional Second Display Toggle -->
-                <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-neutral-800">
-                    <span class="font-medium text-gray-500 dark:text-gray-400">초 단위 표시</span>
+                <div class="flex items-center justify-between pt-2 border-t border-pink-100 dark:border-neutral-800">
+                    <span class="font-medium text-pink-600/80 dark:text-pink-400">초 단위 표시</span>
                     <label class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" id="seconds-toggle" class="sr-only peer" onchange="toggleSeconds(this.checked)">
-                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-black dark:peer-checked:bg-neutral-200"></div>
+                        <div class="w-11 h-6 bg-pink-100 peer-focus:outline-none rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-pink-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-pink-400 dark:peer-checked:bg-pink-500"></div>
                     </label>
                 </div>
             </div>
 
             <!-- Footer info -->
-            <div class="mt-6 text-center text-xs text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-neutral-800 pt-3">
-                * 설정은 브라우저에 자동 저장됩니다.
+            <div class="mt-6 text-center text-xs text-pink-400/80 dark:text-neutral-500 border-t border-pink-100 dark:border-neutral-800 pt-3">
+                ✿ 예쁜 봄날 되세요 ✿
             </div>
         </div>
     </div>
@@ -150,15 +187,89 @@
     <script>
         // State variables
         let currentTheme = 'light';
-        let currentFont = 'sans';
+        let currentFont = 'serif';
         let currentSize = 'md';
         let currentBorder = 'none';
         let showSeconds = false;
 
+        // --- Cherry Blossom Canvas Animation Logic ---
+        const canvas = document.getElementById('blossom-canvas');
+        const ctx = canvas.getContext('2d');
+        let petals = [];
+        const maxPetals = 25; // Controlled density for smooth rendering
+
+        class Petal {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height - canvas.height;
+                this.r = Math.random() * 6 + 4; // Size
+                this.d = Math.random() * maxPetals;
+                this.w = Math.random() * 10;
+                this.h = Math.random() * 5 + 3;
+                this.wy = Math.random() * 0.4 + 0.1; // Speed y
+                this.wx = Math.random() * 1 - 0.5; // Wind x
+                this.rot = Math.random() * 360; // Rotation angle
+                this.rotSpeed = Math.random() * 2 - 1; // Rotation speed
+                this.color = `rgba(255, ${Math.floor(Math.random() * 40 + 175)}, ${Math.floor(Math.random() * 30 + 195)}, ${Math.random() * 0.4 + 0.4})`;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rot * Math.PI / 180);
+                ctx.beginPath();
+                // Cherry blossom petal curve
+                ctx.ellipse(0, 0, this.r, this.r / 1.7, 0, 0, 2 * Math.PI);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            update() {
+                this.y += this.wy;
+                this.x += this.wx + Math.sin(this.y / 30) * 0.3; // Swing motion
+                this.rot += this.rotSpeed;
+
+                // Reset when petal falls off screen
+                if (this.y > canvas.height || this.x > canvas.width || this.x < -10) {
+                    this.x = Math.random() * canvas.width;
+                    this.y = -10;
+                    this.wy = Math.random() * 0.4 + 0.1;
+                    this.wx = Math.random() * 1 - 0.5;
+                }
+            }
+        }
+
+        function initCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            petals = [];
+            for (let i = 0; i < maxPetals; i++) {
+                petals.push(new Petal());
+                // Spread initially across screen height
+                petals[i].y = Math.random() * canvas.height;
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            petals.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // --- STREAMING_CHUNK: Settings Management and Clock Updating ---
         // Load saved configurations
         function loadSettings() {
             currentTheme = localStorage.getItem('notion-clock-theme') || 'light';
-            currentFont = localStorage.getItem('notion-clock-font') || 'sans';
+            currentFont = localStorage.getItem('notion-clock-font') || 'serif'; // Default changed to Serif for romantic spring style
             currentSize = localStorage.getItem('notion-clock-size') || 'md';
             currentBorder = localStorage.getItem('notion-clock-border') || 'none';
             showSeconds = localStorage.getItem('notion-clock-seconds') === 'true';
@@ -210,7 +321,6 @@
             }
         }
 
-        // Settings panel open/close
         const settingsBtn = document.getElementById('settings-btn');
         const settingsPanel = document.getElementById('settings-panel');
         const closeSettings = document.getElementById('close-settings');
@@ -238,10 +348,11 @@
 
             const body = document.getElementById('body-container');
             const widgetCard = document.getElementById('widget-card');
+            const svgIcon = document.getElementById('blossom-svg');
             
             // Reset theme classes
-            body.classList.remove('bg-white', 'text-black', 'bg-black', 'text-white', 'dark');
-            widgetCard.classList.remove('border-gray-100', 'border-neutral-900', 'bg-white/5', 'bg-black/5');
+            body.classList.remove('bg-[#FFF5F7]', 'bg-[#1C1625]', 'text-[#5C3D46]', 'text-[#FFE1E6]', 'dark');
+            widgetCard.classList.remove('border-pink-100/50', 'border-neutral-800/50', 'bg-white/40', 'bg-neutral-900/30');
 
             let activeTheme = theme;
             if (theme === 'system') {
@@ -250,15 +361,25 @@
             }
 
             if (activeTheme === 'dark') {
-                body.classList.add('bg-black', 'text-white', 'dark');
+                body.classList.add('bg-[#1C1625]', 'text-[#FFE1E6]', 'dark');
+                widgetCard.classList.add('bg-neutral-900/30');
                 if (currentBorder === 'thin') {
-                    widgetCard.classList.add('border-neutral-800');
+                    widgetCard.classList.add('border-pink-800/40');
+                } else {
+                    widgetCard.classList.add('border-transparent');
                 }
+                svgIcon.classList.remove('text-pink-300');
+                svgIcon.classList.add('text-pink-400');
             } else {
-                body.classList.add('bg-white', 'text-black');
+                body.classList.add('bg-[#FFF0F5]', 'text-[#5C3D46]');
+                widgetCard.classList.add('bg-white/40');
                 if (currentBorder === 'thin') {
-                    widgetCard.classList.add('border-gray-200');
+                    widgetCard.classList.add('border-pink-200/80');
+                } else {
+                    widgetCard.classList.add('border-pink-100/50');
                 }
+                svgIcon.classList.remove('text-pink-400');
+                svgIcon.classList.add('text-pink-300');
             }
 
             // Update Active Buttons styling
@@ -331,17 +452,17 @@
             const widgetCard = document.getElementById('widget-card');
             const isDark = document.getElementById('body-container').classList.contains('dark');
             
-            widgetCard.classList.remove('border-gray-200', 'border-neutral-800', 'shadow-lg', 'shadow-black/5', 'shadow-white/5', 'bg-neutral-900/40', 'bg-gray-50/50');
+            widgetCard.classList.remove('border-pink-200/80', 'border-pink-800/40', 'shadow-lg', 'shadow-pink-200/20', 'shadow-neutral-900/30', 'bg-neutral-900/40', 'bg-white/50');
             
             let btnIndex = 0;
             if (border === 'none') {
-                widgetCard.classList.add('border-transparent');
+                widgetCard.classList.add(isDark ? 'border-transparent' : 'border-pink-100/50');
                 btnIndex = 0;
             } else if (border === 'thin') {
-                widgetCard.classList.add(isDark ? 'border-neutral-800' : 'border-gray-200');
+                widgetCard.classList.add(isDark ? 'border-pink-800/40' : 'border-pink-200/80');
                 btnIndex = 1;
             } else if (border === 'shadow') {
-                widgetCard.classList.add('shadow-lg', isDark ? 'shadow-white/5 bg-neutral-900/40' : 'shadow-black/5 bg-gray-50/50');
+                widgetCard.classList.add('shadow-lg', isDark ? 'shadow-neutral-900/30 bg-neutral-950/20' : 'shadow-pink-300/30 bg-white/50');
                 btnIndex = 2;
             }
 
@@ -361,16 +482,16 @@
             }
         }
 
-        // Assistive function to update active styles on options button
+        // Helper function to update style for buttons on settings
         function updateOptionButtons(className, activeIndex) {
             const buttons = document.getElementsByClassName(className);
             for (let i = 0; i < buttons.length; i++) {
                 if (i === activeIndex) {
-                    buttons[i].classList.add('bg-black', 'text-white', 'dark:bg-white', 'dark:text-black', 'border-black', 'dark:border-white');
-                    buttons[i].classList.remove('border-gray-300', 'dark:border-neutral-700', 'text-black', 'dark:text-white');
+                    buttons[i].classList.add('bg-pink-400', 'text-white', 'dark:bg-pink-500', 'border-pink-400', 'dark:border-pink-500');
+                    buttons[i].classList.remove('border-pink-200/60', 'dark:border-neutral-700', 'text-neutral-800', 'dark:text-neutral-100');
                 } else {
-                    buttons[i].classList.remove('bg-black', 'text-white', 'dark:bg-white', 'dark:text-black', 'border-black', 'dark:border-white');
-                    buttons[i].classList.add('border-gray-300', 'dark:border-neutral-700');
+                    buttons[i].classList.remove('bg-pink-400', 'text-white', 'dark:bg-pink-500', 'border-pink-400', 'dark:border-pink-500');
+                    buttons[i].classList.add('border-pink-200/60', 'dark:border-neutral-700');
                 }
             }
         }
@@ -386,6 +507,8 @@
 
         // Initialize clock on window load
         window.onload = function () {
+            initCanvas();
+            animate();
             loadSettings();
             updateClock();
             setInterval(updateClock, 1000);
