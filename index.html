@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notion Minimalist Clock Widget</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts for sophisticated Korean typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Smooth transition for theme switching and interactive elements */
+        * {
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, transform 0.2s ease;
+        }
+        
+        /* Font classes */
+        .font-sans-kr { font-family: 'Noto Sans KR', sans-serif; }
+        .font-serif-kr { font-family: 'Gowun Batang', serif; }
+        .font-mono-kr { font-family: 'JetBrains Mono', monospace; }
+
+        /* Hide scrollbars completely for embed friendliness */
+        body {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        body::-webkit-scrollbar {
+            display: none; /* Chrome, Safari and Opera */
+        }
+
+        /* Subtle pulse animation for the hyphen separator */
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .pulse-separator {
+            animation: pulse-slow 2s infinite;
+        }
+    </style>
+</head>
+<body class="bg-white text-black h-screen w-screen flex items-center justify-center p-4 overflow-hidden select-none font-sans-kr" id="body-container">
+
+    <!-- Main Widget Container -->
+    <div class="relative w-full max-w-lg mx-auto flex flex-col items-center justify-center text-center p-6 rounded-2xl border border-transparent transition-all duration-300" id="widget-card">
+        
+        <!-- Settings Toggle Button (Visible on Hover in desktop, always small and unobtrusive) -->
+        <button id="settings-btn" class="absolute top-2 right-2 p-2 rounded-full opacity-0 hover:opacity-100 focus:opacity-100 md:group-hover:opacity-100 text-gray-400 hover:text-black dark:hover:text-white transition-opacity duration-200 z-20" title="위젯 설정">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+        </button>
+
+        <!-- Clock Display Elements -->
+        <div class="space-y-3 md:space-y-4 cursor-pointer" id="clock-display" onclick="toggleFullScreenHint()">
+            <!-- Date Line: XXXX년 XX월 XX일 X요일 -->
+            <div id="date-part" class="text-xl md:text-2xl lg:text-3xl font-light tracking-wide opacity-90">
+                0000년 00월 00일 일요일
+            </div>
+            
+            <!-- Time Line: - XX시 XX분 오전/오후 -->
+            <div id="time-part" class="text-2xl md:text-3xl lg:text-4xl font-medium tracking-normal flex items-center justify-center gap-1">
+                <span class="pulse-separator opacity-60 mr-1">-</span>
+                <span id="time-hours">00</span>시 
+                <span id="time-minutes" class="ml-1">00</span>분 
+                <span id="time-ampm" class="ml-2 text-lg md:text-xl lg:text-2xl opacity-75 font-normal">오전</span>
+                <span id="time-seconds" class="text-xs opacity-40 self-end mb-1 ml-1 hidden">00</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Panel (Hidden overlay) -->
+    <div id="settings-panel" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white dark:bg-neutral-900 text-black dark:text-white p-6 rounded-2xl max-w-xs w-full shadow-2xl border border-gray-200 dark:border-neutral-800 m-4">
+            <div class="flex justify-between items-center mb-5 pb-2 border-b border-gray-100 dark:border-neutral-800">
+                <h3 class="font-bold text-lg flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    위젯 맞춤 설정
+                </h3>
+                <button id="close-settings" class="text-gray-400 hover:text-black dark:hover:text-white p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-neutral-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-5 text-sm">
+                <!-- Color Theme Options -->
+                <div>
+                    <span class="block font-medium mb-2 text-gray-500 dark:text-gray-400">색상 테마</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setTheme('light')" class="theme-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-center font-medium text-xs">라이트</button>
+                        <button onclick="setTheme('dark')" class="theme-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-center font-medium text-xs">다크</button>
+                        <button onclick="setTheme('system')" class="theme-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-center font-medium text-xs">시스템</button>
+                    </div>
+                </div>
+
+                <!-- Font Selection -->
+                <div>
+                    <span class="block font-medium mb-2 text-gray-500 dark:text-gray-400">서체 스타일</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setFont('sans')" class="font-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs font-sans-kr">고딕</button>
+                        <button onclick="setFont('serif')" class="font-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs font-serif-kr">명조</button>
+                        <button onclick="setFont('mono')" class="font-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs font-mono-kr">코딩</button>
+                    </div>
+                </div>
+
+                <!-- Font Size Options -->
+                <div>
+                    <span class="block font-medium mb-2 text-gray-500 dark:text-gray-400">글자 크기</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setSize('sm')" class="size-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">작게</button>
+                        <button onclick="setSize('md')" class="size-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">보통</button>
+                        <button onclick="setSize('lg')" class="size-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">크게</button>
+                    </div>
+                </div>
+
+                <!-- Border Style Options -->
+                <div>
+                    <span class="block font-medium mb-2 text-gray-500 dark:text-gray-400">테두리 및 그림자</span>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="setBorder('none')" class="border-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">없음</button>
+                        <button onclick="setBorder('thin')" class="border-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">실선</button>
+                        <button onclick="setBorder('shadow')" class="border-opt-btn p-2 rounded-lg border border-gray-300 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-neutral-800 text-xs">그림자</button>
+                    </div>
+                </div>
+
+                <!-- Optional Second Display Toggle -->
+                <div class="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-neutral-800">
+                    <span class="font-medium text-gray-500 dark:text-gray-400">초 단위 표시</span>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="seconds-toggle" class="sr-only peer" onchange="toggleSeconds(this.checked)">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-neutral-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-neutral-600 peer-checked:bg-black dark:peer-checked:bg-neutral-200"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Footer info -->
+            <div class="mt-6 text-center text-xs text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-neutral-800 pt-3">
+                * 설정은 브라우저에 자동 저장됩니다.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let currentTheme = 'light';
+        let currentFont = 'sans';
+        let currentSize = 'md';
+        let currentBorder = 'none';
+        let showSeconds = false;
+
+        // Load saved configurations
+        function loadSettings() {
+            currentTheme = localStorage.getItem('notion-clock-theme') || 'light';
+            currentFont = localStorage.getItem('notion-clock-font') || 'sans';
+            currentSize = localStorage.getItem('notion-clock-size') || 'md';
+            currentBorder = localStorage.getItem('notion-clock-border') || 'none';
+            showSeconds = localStorage.getItem('notion-clock-seconds') === 'true';
+
+            setTheme(currentTheme);
+            setFont(currentFont);
+            setSize(currentSize);
+            setBorder(currentBorder);
+            
+            const secCheckbox = document.getElementById('seconds-toggle');
+            if (secCheckbox) secCheckbox.checked = showSeconds;
+            toggleSeconds(showSeconds);
+        }
+
+        // Clock tick logic
+        function updateClock() {
+            const now = new Date();
+            
+            // Format Year, Month, Date, Day
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const date = String(now.getDate()).padStart(2, '0');
+            
+            const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+            const dayOfWeek = dayNames[now.getDay()] + '요일';
+            
+            // Render Date
+            document.getElementById('date-part').textContent = `${year}년 ${month}월 ${date}일 ${dayOfWeek}`;
+
+            // Format Hour, Minute, Seconds, AM/PM
+            let hours = now.getHours();
+            const ampm = hours >= 12 ? '오후' : '오전';
+            
+            // Convert to 12 hour format
+            hours = hours % 12;
+            hours = hours ? hours : 12; // '0' becomes '12'
+            const hoursStr = String(hours).padStart(2, '0');
+            const minutesStr = String(now.getMinutes()).padStart(2, '0');
+            const secondsStr = String(now.getSeconds()).padStart(2, '0');
+
+            // Render Time Elements
+            document.getElementById('time-hours').textContent = hoursStr;
+            document.getElementById('time-minutes').textContent = minutesStr;
+            document.getElementById('time-ampm').textContent = ampm;
+            
+            const secElem = document.getElementById('time-seconds');
+            if (secElem) {
+                secElem.textContent = secondsStr;
+            }
+        }
+
+        // Settings panel open/close
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const closeSettings = document.getElementById('close-settings');
+
+        settingsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            settingsPanel.classList.remove('opacity-0', 'pointer-events-none');
+        });
+
+        closeSettings.addEventListener('click', () => {
+            settingsPanel.classList.add('opacity-0', 'pointer-events-none');
+        });
+
+        // Click outside settings to close
+        settingsPanel.addEventListener('click', (e) => {
+            if (e.target === settingsPanel) {
+                settingsPanel.classList.add('opacity-0', 'pointer-events-none');
+            }
+        });
+
+        // Theme controllers
+        function setTheme(theme) {
+            currentTheme = theme;
+            localStorage.setItem('notion-clock-theme', theme);
+
+            const body = document.getElementById('body-container');
+            const widgetCard = document.getElementById('widget-card');
+            
+            // Reset theme classes
+            body.classList.remove('bg-white', 'text-black', 'bg-black', 'text-white', 'dark');
+            widgetCard.classList.remove('border-gray-100', 'border-neutral-900', 'bg-white/5', 'bg-black/5');
+
+            let activeTheme = theme;
+            if (theme === 'system') {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                activeTheme = prefersDark ? 'dark' : 'light';
+            }
+
+            if (activeTheme === 'dark') {
+                body.classList.add('bg-black', 'text-white', 'dark');
+                if (currentBorder === 'thin') {
+                    widgetCard.classList.add('border-neutral-800');
+                }
+            } else {
+                body.classList.add('bg-white', 'text-black');
+                if (currentBorder === 'thin') {
+                    widgetCard.classList.add('border-gray-200');
+                }
+            }
+
+            // Update Active Buttons styling
+            updateOptionButtons('theme-opt-btn', theme === 'light' ? 0 : (theme === 'dark' ? 1 : 2));
+        }
+
+        // Font controllers
+        function setFont(font) {
+            currentFont = font;
+            localStorage.setItem('notion-clock-font', font);
+
+            const body = document.getElementById('body-container');
+            body.classList.remove('font-sans-kr', 'font-serif-kr', 'font-mono-kr');
+
+            let btnIndex = 0;
+            if (font === 'sans') {
+                body.classList.add('font-sans-kr');
+                btnIndex = 0;
+            } else if (font === 'serif') {
+                body.classList.add('font-serif-kr');
+                btnIndex = 1;
+            } else if (font === 'mono') {
+                body.classList.add('font-mono-kr');
+                btnIndex = 2;
+            }
+
+            updateOptionButtons('font-opt-btn', btnIndex);
+        }
+
+        // Size controllers
+        function setSize(size) {
+            currentSize = size;
+            localStorage.setItem('notion-clock-size', size);
+
+            const datePart = document.getElementById('date-part');
+            const timePart = document.getElementById('time-part');
+            const ampmPart = document.getElementById('time-ampm');
+
+            // Reset classes
+            datePart.classList.remove('text-base', 'text-lg', 'text-xl', 'md:text-2xl', 'lg:text-3xl', 'text-2xl', 'md:text-3xl', 'lg:text-4xl', 'text-3xl', 'md:text-4xl', 'lg:text-5xl');
+            timePart.classList.remove('text-lg', 'text-xl', 'text-2xl', 'md:text-3xl', 'lg:text-4xl', 'text-4xl', 'md:text-5xl', 'lg:text-6xl', 'text-5xl', 'md:text-6xl', 'lg:text-7xl');
+            ampmPart.classList.remove('text-sm', 'text-base', 'text-lg', 'md:text-xl', 'lg:text-2xl', 'text-2xl', 'md:text-3xl', 'lg:text-4xl');
+
+            let btnIndex = 0;
+            if (size === 'sm') {
+                datePart.classList.add('text-base', 'md:text-lg', 'lg:text-xl');
+                timePart.classList.add('text-xl', 'md:text-2xl', 'lg:text-3xl');
+                ampmPart.classList.add('text-sm', 'md:text-base');
+                btnIndex = 0;
+            } else if (size === 'md') {
+                datePart.classList.add('text-xl', 'md:text-2xl', 'lg:text-3xl');
+                timePart.classList.add('text-2xl', 'md:text-3xl', 'lg:text-4xl');
+                ampmPart.classList.add('text-lg', 'md:text-xl', 'lg:text-2xl');
+                btnIndex = 1;
+            } else if (size === 'lg') {
+                datePart.classList.add('text-2xl', 'md:text-3xl', 'lg:text-4xl');
+                timePart.classList.add('text-4xl', 'md:text-5xl', 'lg:text-6xl');
+                ampmPart.classList.add('text-2xl', 'md:text-3xl', 'lg:text-4xl');
+                btnIndex = 2;
+            }
+
+            updateOptionButtons('size-opt-btn', btnIndex);
+        }
+
+        // Border/Shadow controllers
+        function setBorder(border) {
+            currentBorder = border;
+            localStorage.setItem('notion-clock-border', border);
+
+            const widgetCard = document.getElementById('widget-card');
+            const isDark = document.getElementById('body-container').classList.contains('dark');
+            
+            widgetCard.classList.remove('border-gray-200', 'border-neutral-800', 'shadow-lg', 'shadow-black/5', 'shadow-white/5', 'bg-neutral-900/40', 'bg-gray-50/50');
+            
+            let btnIndex = 0;
+            if (border === 'none') {
+                widgetCard.classList.add('border-transparent');
+                btnIndex = 0;
+            } else if (border === 'thin') {
+                widgetCard.classList.add(isDark ? 'border-neutral-800' : 'border-gray-200');
+                btnIndex = 1;
+            } else if (border === 'shadow') {
+                widgetCard.classList.add('shadow-lg', isDark ? 'shadow-white/5 bg-neutral-900/40' : 'shadow-black/5 bg-gray-50/50');
+                btnIndex = 2;
+            }
+
+            updateOptionButtons('border-opt-btn', btnIndex);
+        }
+
+        // Seconds toggle controller
+        function toggleSeconds(show) {
+            showSeconds = show;
+            localStorage.setItem('notion-clock-seconds', show);
+            
+            const secElem = document.getElementById('time-seconds');
+            if (show) {
+                secElem.classList.remove('hidden');
+            } else {
+                secElem.classList.add('hidden');
+            }
+        }
+
+        // Assistive function to update active styles on options button
+        function updateOptionButtons(className, activeIndex) {
+            const buttons = document.getElementsByClassName(className);
+            for (let i = 0; i < buttons.length; i++) {
+                if (i === activeIndex) {
+                    buttons[i].classList.add('bg-black', 'text-white', 'dark:bg-white', 'dark:text-black', 'border-black', 'dark:border-white');
+                    buttons[i].classList.remove('border-gray-300', 'dark:border-neutral-700', 'text-black', 'dark:text-white');
+                } else {
+                    buttons[i].classList.remove('bg-black', 'text-white', 'dark:bg-white', 'dark:text-black', 'border-black', 'dark:border-white');
+                    buttons[i].classList.add('border-gray-300', 'dark:border-neutral-700');
+                }
+            }
+        }
+
+        // Mouse hover states to reveal gear settings smoothly
+        const card = document.getElementById('widget-card');
+        card.addEventListener('mouseenter', () => {
+            settingsBtn.style.opacity = '1';
+        });
+        card.addEventListener('mouseleave', () => {
+            settingsBtn.style.opacity = '0';
+        });
+
+        // Initialize clock on window load
+        window.onload = function () {
+            loadSettings();
+            updateClock();
+            setInterval(updateClock, 1000);
+        };
+    </script>
+</body>
+</html>
